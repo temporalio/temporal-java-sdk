@@ -1,5 +1,6 @@
 // Run 'gradle checkUpdates' to find out which dependencies have newer versions
 plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
     id 'java-library'
     id 'net.ltgt.errorprone' version '1.3.0'
     id 'net.minecrell.licenser' version '0.4.1'
@@ -7,7 +8,7 @@ plugins {
     id 'maven-publish'
     id 'signing'
     id 'de.marcphilipp.nexus-publish' version '0.4.0'
-    id 'name.remal.check-updates' version '1.2.2'
+    id 'name.remal.check-updates' version '1.1.4'
 }
 
 apply plugin: 'idea' // IntelliJ plugin to see files generated from protos
@@ -24,9 +25,9 @@ if (hasProperty('signing.keyId')) {
 
 group = 'io.temporal'
 version = getVersionName()
-archivesBaseName = "temporal-sdk"
+archivesBaseName = "temporal-sdk-kotlin"
 
-description = '''Temporal Workflow Java SDK'''
+description = '''Temporal Workflow Java SDK Kotlin'''
 
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -35,28 +36,35 @@ java {
     withSourcesJar()
 }
 
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+}
+
 dependencies {
     errorproneJavac('com.google.errorprone:javac:9+181-r4173-1')
-    errorprone('com.google.errorprone:error_prone_core:2.5.1')
+    errorprone('com.google.errorprone:error_prone_core:2.4.0')
 
-    api project(':temporal-serviceclient')
-    api group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
-    api group: 'io.micrometer', name: 'micrometer-core', version: '1.6.3'
+    api project(':temporal-testing')
+    api project(':temporal-sdk')
 
-    implementation group: 'com.google.guava', name: 'guava', version: '30.1-jre'
-    implementation group: 'com.cronutils', name: 'cron-utils', version: '9.1.3'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.1'
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.12.1'
-    if (!JavaVersion.current().isJava8()) {
-        implementation 'javax.annotation:javax.annotation-api:1.3.2'
-    }
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-kotlin', version: '2.12.1'
 
-    testImplementation project(':temporal-testing')
     testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
     testImplementation group: 'com.googlecode.junit-toolbox', name: 'junit-toolbox', version: '2.4'
     testImplementation group: 'junit', name: 'junit', version: '4.13.1'
-
-    compileOnly group: 'org.jetbrains.kotlin', name: 'kotlin-stdlib', version: '1.4.21'
+    testRuntimeOnly('org.junit.vintage:junit-vintage-engine:5.7.0') {
+        because 'allows JUnit 3 and JUnit 4 tests to run'
+    }
 }
 
 configurations.all {
@@ -67,17 +75,6 @@ configurations.all {
 license {
     header rootProject.file('license-header.txt')
     exclude '**/*.puml'
-}
-
-task initSubmodules(type: Exec) {
-    description = 'Initializes submodules'
-    commandLine 'git', 'submodule', 'init'
-}
-
-task updateSubmodules(type: Exec) {
-    dependsOn initSubmodules
-    description = 'Update submodules'
-    commandLine 'git', 'submodule', 'update'
 }
 
 compileJava {
@@ -108,19 +105,8 @@ javadoc {
     }
 }
 
-// Needed to include generated fils into the source jar
-task sourceJar(type: Jar) {
-    from sourceSets.main.allSource, file("$buildDir/generated/main/java")
-    classifier "sources"
-}
-
-task registerNamespace(type: JavaExec) {
-    main = 'io.temporal.RegisterTestNamespace'
-    classpath = sourceSets.test.runtimeClasspath
-}
-
 test {
-    dependsOn 'registerNamespace'
+    useJUnitPlatform()
     dependsOn 'checkLicenseMain'
     testLogging {
         events 'passed', 'skipped', 'failed'
