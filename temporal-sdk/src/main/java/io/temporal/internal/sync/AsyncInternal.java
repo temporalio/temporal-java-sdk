@@ -19,10 +19,12 @@
 
 package io.temporal.internal.sync;
 
-import static io.temporal.internal.common.LambdaUtils.getTarget;
+import static io.temporal.internal.common.JVMLambdaUtils.getTarget;
 
 import io.temporal.common.RetryOptions;
-import io.temporal.internal.common.LambdaUtils;
+import io.temporal.internal.common.JVMLambdaUtils;
+import io.temporal.internal.common.kotlin.KotlinDetector;
+import io.temporal.internal.common.kotlin.KotlinUtils;
 import io.temporal.workflow.ActivityStub;
 import io.temporal.workflow.ChildWorkflowStub;
 import io.temporal.workflow.CompletablePromise;
@@ -308,13 +310,34 @@ public final class AsyncInternal {
   }
 
   public static boolean isAsync(Object func) {
-    SerializedLambda lambda = LambdaUtils.toSerializedLambda(func);
+    return isAsyncJava(func) || isAsyncKotlin(func);
+  }
+
+  private static boolean isAsyncJava(Object func) {
+    SerializedLambda lambda = JVMLambdaUtils.toSerializedLambda(func);
     Object target = getTarget(lambda);
     return target instanceof ActivityStub
         || target instanceof ChildWorkflowStub
         || target instanceof ExternalWorkflowStub
         || (target instanceof AsyncMarker
             && lambda.getImplMethodKind() == MethodHandleInfo.REF_invokeInterface);
+  }
+
+  private static boolean isAsyncKotlin(Object func) {
+    if (KotlinDetector.isKotlinType(func.getClass())) {
+      Object target = KotlinUtils.getLambdaTarget(func);
+      // it looks like we actually always get AsyncMarker here. Classes like ActivityStub,
+      // ChildWorkflowStub, etc are
+      // always wrapped into a Proxy that implements AsyncMarker marker interface.
+      return target instanceof ActivityStub
+          || target instanceof ChildWorkflowStub
+          || target instanceof ExternalWorkflowStub
+          || target instanceof AsyncMarker;
+      //  don't know how to properly make this check with kotlin
+      //            && lambda.getImplMethodKind() == MethodHandleInfo.REF_invokeInterface);
+    } else {
+      return false;
+    }
   }
 
   public static boolean isAsync() {
