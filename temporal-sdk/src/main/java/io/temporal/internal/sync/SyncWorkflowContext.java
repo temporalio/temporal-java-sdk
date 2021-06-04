@@ -182,6 +182,9 @@ final class SyncWorkflowContext implements WorkflowOutboundCallsInterceptor {
   }
 
   @Override
+  public void init() {}
+
+  @Override
   public <T> ActivityOutput<T> executeActivity(ActivityInput<T> input) {
     Optional<Payloads> args = converter.toPayloads(input.getArgs());
     Promise<Optional<Payloads>> binaryResult =
