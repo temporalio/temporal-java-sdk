@@ -26,11 +26,7 @@ import io.temporal.client.WorkflowOptions;
 import io.temporal.failure.CanceledFailure;
 import io.temporal.testing.TestWorkflowEnvironment;
 import io.temporal.worker.Worker;
-import io.temporal.workflow.QueueConsumer;
-import io.temporal.workflow.Workflow;
-import io.temporal.workflow.WorkflowInterface;
-import io.temporal.workflow.WorkflowMethod;
-import io.temporal.workflow.WorkflowQueue;
+import io.temporal.workflow.*;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +34,8 @@ import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 
-public class WorkflowInternalQueueTest {
+@SuppressWarnings("deprecation")
+public class WorkflowInternalDeprecatedQueueTest {
 
   @Rule public final Tracer trace = new Tracer();
 
@@ -47,23 +44,23 @@ public class WorkflowInternalQueueTest {
     DeterministicRunner r =
         DeterministicRunner.newRunner(
             () -> {
-              WorkflowQueue<Boolean> f = WorkflowInternal.newWorkflowQueue(1);
+              WorkflowQueue<Boolean> f = WorkflowInternal.newQueue(1);
               trace.add("root begin");
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         trace.add("thread1 begin");
                         assertTrue(f.take());
                         trace.add("thread1 take success");
-                      },
-                      false)
+                      })
                   .start();
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         trace.add("thread2 begin");
                         f.put(true);
                         trace.add("thread2 put success");
-                      },
-                      false)
+                      })
                   .start();
               trace.add("root done");
             });
@@ -86,9 +83,10 @@ public class WorkflowInternalQueueTest {
     DeterministicRunner r =
         DeterministicRunner.newRunner(
             () -> {
-              WorkflowQueue<Boolean> f = WorkflowInternal.newWorkflowQueue(1);
+              WorkflowQueue<Boolean> f = WorkflowInternal.newQueue(1);
               trace.add("root begin");
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         trace.add("thread1 begin");
                         try {
@@ -97,8 +95,7 @@ public class WorkflowInternalQueueTest {
                           trace.add("thread1 CanceledException");
                         }
                         trace.add("thread1 done");
-                      },
-                      false)
+                      })
                   .start();
               trace.add("root done");
             });
@@ -119,9 +116,10 @@ public class WorkflowInternalQueueTest {
     DeterministicRunner r =
         DeterministicRunner.newRunner(
             () -> {
-              WorkflowQueue<Boolean> f = WorkflowInternal.newWorkflowQueue(1);
+              WorkflowQueue<Boolean> f = WorkflowInternal.newQueue(1);
               trace.add("root begin");
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         trace.add("thread1 begin");
                         try {
@@ -130,8 +128,7 @@ public class WorkflowInternalQueueTest {
                           trace.add("thread1 CanceledFailure");
                         }
                         trace.add("thread1 done");
-                      },
-                      false)
+                      })
                   .start();
               trace.add("root done");
             });
@@ -158,10 +155,11 @@ public class WorkflowInternalQueueTest {
     public List<String> test() {
       List<String> trace = new ArrayList<>();
 
-      WorkflowQueue<Boolean> f = WorkflowInternal.newWorkflowQueue(1);
+      WorkflowQueue<Boolean> f = WorkflowInternal.newQueue(1);
       trace.add("root begin");
       WorkflowThread thread1 =
-          WorkflowThread.newThread(
+          WorkflowInternal.newThread(
+              false,
               () -> {
                 trace.add("thread1 begin");
                 Workflow.sleep(2000);
@@ -169,20 +167,19 @@ public class WorkflowInternalQueueTest {
                 trace.add("thread1 take1 success");
                 assertFalse(f.take());
                 trace.add("thread1 take2 success");
-              },
-              false);
+              });
 
       thread1.start();
       WorkflowThread thread2 =
-          WorkflowThread.newThread(
+          WorkflowInternal.newThread(
+              false,
               () -> {
                 trace.add("thread2 begin");
                 f.put(true);
                 trace.add("thread2 put1 success");
                 f.put(false);
                 trace.add("thread2 put2 success");
-              },
-              false);
+              });
       thread2.start();
       trace.add("root done");
       Workflow.await(() -> thread1.isDone() && thread2.isDone());
@@ -191,7 +188,7 @@ public class WorkflowInternalQueueTest {
   }
 
   @Test
-  public void testPutBlocking() {
+  public void testPutBlocking() throws Throwable {
     TestWorkflowEnvironment testEnv = TestWorkflowEnvironment.newInstance();
     String testTaskQueue = "testTaskQueue";
     Worker worker = testEnv.newWorker(testTaskQueue);
@@ -223,7 +220,7 @@ public class WorkflowInternalQueueTest {
     @Override
     public List<String> test() {
       List<String> trace = new ArrayList<>();
-      WorkflowQueue<Integer> f = WorkflowInternal.newWorkflowQueue(1);
+      WorkflowQueue<Integer> f = WorkflowInternal.newQueue(1);
       trace.add("root begin");
       trace.add("peek " + f.peek());
       trace.add("offer " + f.offer(12));
@@ -274,9 +271,10 @@ public class WorkflowInternalQueueTest {
     DeterministicRunner r =
         DeterministicRunner.newRunner(
             () -> {
-              WorkflowQueue<Boolean> f = WorkflowInternal.newWorkflowQueue(1);
+              WorkflowQueue<Boolean> f = WorkflowInternal.newQueue(1);
               trace.add("root begin");
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         trace.add("thread1 begin");
                         try {
@@ -286,8 +284,7 @@ public class WorkflowInternalQueueTest {
                           trace.add("thread1 CanceledFailure");
                         }
                         trace.add("thread1 done");
-                      },
-                      false)
+                      })
                   .start();
               trace.add("root done");
             });
@@ -308,9 +305,10 @@ public class WorkflowInternalQueueTest {
     DeterministicRunner r =
         DeterministicRunner.newRunner(
             () -> {
-              WorkflowQueue<Boolean> f = WorkflowInternal.newWorkflowQueue(1);
+              WorkflowQueue<Boolean> f = WorkflowInternal.newQueue(1);
               trace.add("root begin");
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         trace.add("thread1 begin");
                         try {
@@ -320,8 +318,7 @@ public class WorkflowInternalQueueTest {
                           trace.add("thread1 CanceledFailure");
                         }
                         trace.add("thread1 done");
-                      },
-                      false)
+                      })
                   .start();
               trace.add("root done");
             });
@@ -342,9 +339,10 @@ public class WorkflowInternalQueueTest {
     DeterministicRunner r =
         DeterministicRunner.newRunner(
             () -> {
-              WorkflowQueue<Integer> queue = WorkflowInternal.newWorkflowQueue(1);
+              WorkflowQueue<Integer> queue = WorkflowInternal.newQueue(1);
               trace.add("root begin");
-              WorkflowThread.newThread(
+              WorkflowInternal.newThread(
+                      false,
                       () -> {
                         QueueConsumer<String> mapped = queue.map((s) -> s + "-mapped");
                         trace.add("thread1 begin");
@@ -352,8 +350,7 @@ public class WorkflowInternalQueueTest {
                           trace.add("thread1 " + mapped.take());
                         }
                         trace.add("thread1 done");
-                      },
-                      false)
+                      })
                   .start();
               trace.add("root thread1 started");
               for (int i = 0; i < 10; i++) {
@@ -384,30 +381,6 @@ public class WorkflowInternalQueueTest {
           "thread1 done",
         };
     trace.setExpected(expected);
-    r.close();
-  }
-
-  @Test
-  public void testQueueOrder() {
-    WorkflowQueue<Integer> queue = WorkflowInternal.newWorkflowQueue(3);
-    int[] result = new int[3];
-    DeterministicRunner r =
-        DeterministicRunner.newRunner(
-            () -> {
-              queue.put(1);
-              queue.put(2);
-              queue.put(3);
-              result[0] = queue.take();
-              result[1] = queue.poll();
-              result[2] = queue.poll();
-            });
-    r.runUntilAllBlocked(getDeadlockDetectionTimeout());
-    r.cancel("test");
-    r.runUntilAllBlocked(getDeadlockDetectionTimeout());
-
-    int[] expected = new int[] {1, 2, 3};
-    assertArrayEquals(expected, result);
-
     r.close();
   }
 }

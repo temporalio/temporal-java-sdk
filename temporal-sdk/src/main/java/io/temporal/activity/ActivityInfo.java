@@ -24,56 +24,66 @@ import java.time.Duration;
 import java.util.Optional;
 
 /**
- * Information about the Activity Task that the current Activity is handling. Use {@link
+ * Information about the Activity Task that the current Activity Execution is handling. Use {@link
  * ActivityExecutionContext#getInfo()} to access.
  */
 public interface ActivityInfo {
 
   /**
-   * Correlation token that can be used to complete the Activity asynchronously through {@link
-   * io.temporal.client.ActivityCompletionClient#complete(byte[], Object)}.
+   * @return a correlation token that can be used to complete the Activity Execution asynchronously
+   *     through {@link io.temporal.client.ActivityCompletionClient#complete(byte[], Object)}.
    */
   byte[] getTaskToken();
 
-  /** WorkflowId of the Workflow that scheduled the Activity. */
+  /** @return WorkflowId of the Workflow Execution that scheduled the Activity Execution. */
   String getWorkflowId();
 
-  /** RunId of the Workflow that scheduled the Activity. */
+  /** @return RunId of the Workflow Execution that scheduled the Activity Execution. */
   String getRunId();
 
   /**
-   * ID of the Activity. This ID can be used to complete the Activity asynchronously through {@link
-   * io.temporal.client.ActivityCompletionClient#complete(String, Optional, String, Object)}.
+   * ID of the Activity Execution. This ID can be used to complete the Activity Execution
+   * asynchronously through {@link io.temporal.client.ActivityCompletionClient#complete(String,
+   * Optional, String, Object)}.
    */
   String getActivityId();
 
-  /** Type of the Activity. */
+  /** @return type of the Activity. */
   String getActivityType();
 
   /**
-   * Time when the Activity was initially scheduled by the Workflow.
+   * Time when the Activity Execution was initially scheduled by the Workflow Execution.
    *
    * @return Timestamp in milliseconds.
    */
   long getScheduledTimestamp();
 
+  /** @return the Schedule-To-Close Timeout setting as a Duration. */
   Duration getScheduleToCloseTimeout();
 
+  /** @return the Start-To-Close Timeout setting as a Duration. */
   Duration getStartToCloseTimeout();
 
+  /** @return the Heartbeat Timeout setting as a Duration. */
   Duration getHeartbeatTimeout();
 
   Optional<Payloads> getHeartbeatDetails();
 
+  /** @return the Workflow Type of the Workflow Execution that executed the Activity. */
   String getWorkflowType();
 
+  /** @return the Namespace of Workflow Execution that executed the Activity. */
   String getWorkflowNamespace();
 
+  /** @return the Namespace of the Activty Execution. */
   String getActivityNamespace();
 
-  /** Activity execution attempt. Starts from 1. Incremented on each Activity retry. */
+  /**
+   * Gets the current Activity Execution attempt count. Attempt counts start at 1 and increment on
+   * each Activity Task Execution retry.
+   */
   int getAttempt();
 
-  /** Determines if this Activity is invoked as a local Activity. */
+  /** Used to determine if the Activity Execution is a local Activity. */
   boolean isLocal();
 }

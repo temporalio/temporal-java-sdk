@@ -17,26 +17,20 @@
  *  permissions and limitations under the License.
  */
 
-package io.temporal.activity;
+package io.temporal.conf;
 
-/** Defines Activity Execution cancellation behavior. */
-public enum ActivityCancellationType {
+public final class EnvironmentVariableNames {
   /**
-   * Wait for the Activity Execution to confirm any requested cancellation. An Activity Execution
-   * must Heartbeat to receive a cancellation notification. This can block the cancellation for a
-   * long time if the Activity Execution doesn't Heartbeat or chooses to ignore the cancellation
-   * request.
+   * Specify this env variable to disable checks and enforcement for classes that are not intended
+   * to be accessed from workflow code.
+   *
+   * <p>Not specifying it or setting it to "false" (case insensitive) leaves the checks enforced.
+   *
+   * <p>This option is exposed for backwards compatibility only and should never be enabled for any
+   * new code or application.
    */
-  WAIT_CANCELLATION_COMPLETED,
+  public static final String DISABLE_NON_WORKFLOW_CODE_ENFORCEMENTS =
+      "TEMPORAL_DISABLE_NON_WORKFLOW_CODE_ENFORCEMENTS";
 
-  /**
-   * Initiate a cancellation request and immediately report cancellation to the Workflow Execution.
-   */
-  TRY_CANCEL,
-
-  /**
-   * Do not request cancellation of the Activity Execution and immediately report cancellation to
-   * the Workflow Execution.
-   */
-  ABANDON,
+  private EnvironmentVariableNames() {}
 }

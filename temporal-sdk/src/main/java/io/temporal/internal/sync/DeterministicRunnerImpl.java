@@ -32,6 +32,7 @@ import io.temporal.api.failure.v1.Failure;
 import io.temporal.common.context.ContextPropagator;
 import io.temporal.common.converter.DataConverter;
 import io.temporal.failure.CanceledFailure;
+import io.temporal.internal.WorkflowThreadMarker;
 import io.temporal.internal.context.ContextThreadLocal;
 import io.temporal.internal.replay.ExecuteActivityParameters;
 import io.temporal.internal.replay.ExecuteLocalActivityParameters;
@@ -133,7 +134,13 @@ class DeterministicRunnerImpl implements DeterministicRunner {
   }
 
   static void setCurrentThreadInternal(WorkflowThread coroutine) {
-    currentThreadThreadLocal.set(coroutine);
+    if (coroutine != null) {
+      currentThreadThreadLocal.set(coroutine);
+      WorkflowThreadMarkerAccessor.markAsWorkflowThread();
+    } else {
+      currentThreadThreadLocal.set(null);
+      WorkflowThreadMarkerAccessor.markAsNonWorkflowThread();
+    }
   }
 
   /**
@@ -755,6 +762,16 @@ class DeterministicRunnerImpl implements DeterministicRunner {
     @Override
     public int getAttempt() {
       return 1;
+    }
+  }
+
+  private static class WorkflowThreadMarkerAccessor extends WorkflowThreadMarker {
+    public static void markAsWorkflowThread() {
+      isWorkflowThreadThreadLocal.set(true);
+    }
+
+    public static void markAsNonWorkflowThread() {
+      isWorkflowThreadThreadLocal.set(false);
     }
   }
 }
